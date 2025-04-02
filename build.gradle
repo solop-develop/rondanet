@@ -1,0 +1,108 @@
+plugins {
+	id 'java-library'
+	id 'maven-publish'
+	id 'signing'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+repositories {
+	mavenLocal()
+	mavenCentral()
+	maven {
+    		url = "https://maven.pkg.github.com/solop-develop/adempiere-base"
+        	credentials {
+        		username = findProperty("deployUsername") ?: System.properties['deploy.user'] ?: System.getenv("GITHUB_DEPLOY_USER")
+        		password = findProperty("deployToken") ?: System.properties['deploy.token'] ?: System.getenv("GITHUB_DEPLOY_TOKEN")
+		}
+	}
+	maven {
+        url = "https://maven.pkg.github.com/solop-develop/adempiere-solop"
+        credentials {
+            username = findProperty("deployUsername") ?: System.properties['deploy.user']
+            password = findProperty("deployPassword") ?: System.properties['deploy.token']
+        }
+    }
+}
+
+ext {
+    libraryRepo  = "https://maven.pkg.github.com/solop-develop/adempiere-solop"
+    baseVersion  = "0.0.5"
+    baseGroupId  = "org.solop.adempiere"
+}
+
+dependencies {
+   api fileTree(
+        dir: 'lib',
+        include: [
+            '*.jar'
+        ]
+    )
+    //	ADempiere Core
+    api "${baseGroupId}:base:${baseVersion}"
+}
+
+sourceSets {
+    main {
+         java {
+            srcDirs = ['src/main/java']
+         }
+    }
+}
+
+
+def entityType = 'TEMPLATE'
+version = findProperty("deployVersion") ?: "local-1.0.0"
+
+jar {
+	manifest {
+		attributes(
+			"Implementation-Title": "ADempiere Library",
+			"Implementation-Version": version,
+			"EntityType": entityType
+		)
+    }
+}
+
+publishing {
+    repositories {
+		mavenLocal()
+        maven {
+            url = libraryRepo
+            credentials {
+                username = findProperty("deployUsername") ?: System.properties['deploy.user'] ?: System.getenv("GITHUB_DEPLOY_USER")
+                password = findProperty("deployToken") ?: System.properties['deploy.token'] ?: System.getenv("GITHUB_DEPLOY_TOKEN")
+            }
+        }
+    }
+    
+    publications {
+        maven(MavenPublication) {
+			groupId = 'com.solop.adempiere.tools'
+			artifactId = 'adempiere-template-project'
+			version = version
+           	from components.java
+           	pom {
+                name = 'adempiere-template-project'
+                description = ''
+                url = 'http://www.solopsoftware.com/'
+                licenses {
+                    license {
+                        name = 'GNU General Public License v3.0'
+                        url = 'https://www.gnu.org/licenses/gpl-3.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = '<your id>'
+                        name = '<Your Name>'
+                        email = '<your mail>@erpya.com'
+                    }
+                }
+            }
+		}
+	}
+}
